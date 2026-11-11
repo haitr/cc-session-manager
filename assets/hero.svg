@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="628" viewBox="0 0 1200 628" role="img" aria-labelledby="title desc">
+<title id="title">ccsm: Claude Code session manager</title>
+<desc id="desc">Terminal window showing ccsm: folder tabs, a session list with a moving cursor and checkboxes, a transcript preview of the session under the cursor, and key hints ending in a trash counter.</desc>
+<style>
+.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:15px}
+.word{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:34px;font-weight:800;letter-spacing:.5px}
+.tag{font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:16px}
+.pill{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:13px}
+.bar,.p1,.p2,.p3,.c1,.c2,.c3,.x2,.x3{animation:12s step-end infinite}
+.p2,.p3,.c2,.c3,.x2,.x3{opacity:0}
+.bar{animation-name:bar}.p1{animation-name:p1}.p2{animation-name:p2}.p3{animation-name:p3}
+.c1{animation-name:c1}.c2{animation-name:c2}.c3{animation-name:c3}.x2{animation-name:x2}.x3{animation-name:c3}
+@keyframes bar{0%{transform:translateY(0)}25%{transform:translateY(24px)}50%{transform:translateY(48px)}75%,100%{transform:translateY(0)}}
+@keyframes p1{0%{opacity:1}25%{opacity:0}75%,100%{opacity:1}}
+@keyframes p2{0%{opacity:0}25%{opacity:1}50%,100%{opacity:0}}
+@keyframes p3{0%{opacity:0}50%{opacity:1}75%,100%{opacity:0}}
+@keyframes c1{0%{opacity:1}37.5%,100%{opacity:0}}
+@keyframes c2{0%{opacity:0}37.5%{opacity:1}62.5%,100%{opacity:0}}
+@keyframes c3{0%{opacity:0}62.5%,100%{opacity:1}}
+@keyframes x2{0%{opacity:0}37.5%,100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<defs>
+<linearGradient id="hbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0D0A1A"/><stop offset=".55" stop-color="#15102A"/><stop offset="1" stop-color="#1C1236"/></linearGradient>
+<linearGradient id="hedge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EE6FF8" stop-opacity=".55"/><stop offset=".5" stop-color="#7D56F4" stop-opacity=".25"/><stop offset="1" stop-color="#7D56F4" stop-opacity=".6"/></linearGradient>
+<radialGradient id="hglowA" cx=".85" cy="0" r=".6"><stop offset="0" stop-color="#EE6FF8" stop-opacity=".22"/><stop offset="1" stop-color="#EE6FF8" stop-opacity="0"/></radialGradient>
+<radialGradient id="hglowB" cx=".05" cy="1" r=".7"><stop offset="0" stop-color="#7D56F4" stop-opacity=".30"/><stop offset="1" stop-color="#7D56F4" stop-opacity="0"/></radialGradient>
+</defs>
+<rect x="1" y="1" width="1198" height="626" rx="24" fill="url(#hbg)"/>
+<rect x="1" y="1" width="1198" height="626" rx="24" fill="url(#hglowA)"/>
+<rect x="1" y="1" width="1198" height="626" rx="24" fill="url(#hglowB)"/>
+<rect x="1" y="1" width="1198" height="626" rx="24" fill="none" stroke="url(#hedge)" stroke-width="1.5"/>
+<defs><linearGradient id="logo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EE6FF8"/><stop offset="1" stop-color="#7D56F4"/></linearGradient>
+<filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity=".5"/></filter></defs>
+<rect x="48" y="30" width="56" height="56" rx="14" fill="url(#logo)"/>
+<path d="M65 46 l13 12 -13 12" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="82" y="66" width="12" height="5" rx="2.5" fill="#fff"/>
+<text x="122" y="62" class="word" fill="#fff">ccsm</text>
+<text x="123" y="86" class="tag" fill="#B9B4D0">Browse. Filter. Trash. Restore.</text>
+<rect x="938" y="43" width="214" height="30" rx="15" fill="#7D56F4" fill-opacity=".2" stroke="#7D56F4" stroke-opacity=".7"/><text x="1045.0" y="63" class="pill" fill="#E4E2EE" text-anchor="middle">windows · macos · linux</text>
+<rect x="744" y="43" width="182" height="30" rx="15" fill="#7D56F4" fill-opacity=".2" stroke="#7D56F4" stroke-opacity=".7"/><text x="835.0" y="63" class="pill" fill="#E4E2EE" text-anchor="middle">◆ recoverable trash</text>
+<g filter="url(#shadow)"><rect x="48" y="116" width="1104" height="476" rx="14" fill="#100E19"/></g>
+<path d="M48 150 v-20 a14 14 0 0 1 14 -14 h1076 a14 14 0 0 1 14 14 v20 z" fill="#1A1630"/>
+<rect x="48.5" y="116.5" width="1103" height="475" rx="14" fill="none" stroke="#2E2947"/>
+<circle cx="74" cy="133" r="6" fill="#FF5F57"/><circle cx="94" cy="133" r="6" fill="#FEBC2E"/><circle cx="114" cy="133" r="6" fill="#28C840"/>
+<text x="600" y="138" class="pill" fill="#77758C" text-anchor="middle">ccsm</text>
+<text x="72" y="181" class="m" fill="#EE6FF8" textLength="387" font-weight="700">ccsm  128 sessions · 14 projects · 412.6 MB</text>
+<text x="459" y="181" class="m" fill="#7D56F4" textLength="117">  · 3 foreign</text>
+<rect x="72" y="188" width="63" height="24" fill="#7D56F4"/>
+<text x="72" y="205" class="m" fill="#FAFAFA" textLength="63"> [all] </text>
+<text x="135" y="205" class="m" fill="#77758C" textLength="117"> api-gateway </text>
+<text x="252" y="205" class="m" fill="#77758C" textLength="54"> ccsm </text>
+<text x="306" y="205" class="m" fill="#77758C" textLength="90"> compiler </text>
+<text x="396" y="205" class="m" fill="#77758C" textLength="90"> dotfiles </text>
+<text x="486" y="205" class="m" fill="#77758C" textLength="63"> infra </text>
+<text x="549" y="205" class="m" fill="#77758C" textLength="81"> ios-app </text>
+<text x="630" y="205" class="m" fill="#77758C" textLength="63"> notes </text>
+<text x="693" y="205" class="m" fill="#77758C" textLength="135"> web-dashboard </text>
+<text x="72" y="229" class="m" fill="#77758C" textLength="81">/newer:7D</text>
+<text x="171" y="229" class="m" fill="#7D56F4" textLength="297">trashed 4 — tab to view / restore</text>
+<rect x="76.5" y="248.5" width="567" height="264" rx="3" fill="none" stroke="#3B3852"/>
+<rect x="652.5" y="248.5" width="468" height="264" rx="3" fill="none" stroke="#3B3852"/>
+<rect x="81" y="240" width="252" height="16" fill="#100E19"/>
+<text x="81" y="253" class="m" fill="#77758C" textLength="90"> sessions </text>
+<text x="171" y="253" class="m p1" fill="#77758C" textLength="9">2</text>
+<text x="171" y="253" class="m p2" fill="#77758C" textLength="9">3</text>
+<text x="171" y="253" class="m p3" fill="#77758C" textLength="9">4</text>
+<text x="180" y="253" class="m" fill="#77758C" textLength="54">/42 · </text>
+<text x="234" y="253" class="m c1" fill="#77758C" textLength="9">1</text>
+<text x="234" y="253" class="m c2" fill="#77758C" textLength="9">2</text>
+<text x="234" y="253" class="m c3" fill="#77758C" textLength="9">3</text>
+<text x="243" y="253" class="m" fill="#77758C" textLength="90"> selected </text>
+<g class="bar"><rect x="81" y="284" width="549" height="24" fill="#7D56F4"/><text x="81" y="301" class="m" fill="#FAFAFA" textLength="9">›</text></g>
+<text x="99" y="277" class="m" fill="#E4E2EE" textLength="27">[ ]</text>
+<text x="135" y="277" class="m" fill="#E4E2EE" textLength="9">●</text>
+<text x="153" y="277" class="m" fill="#E4E2EE" textLength="378">now ccsm           Redesign README artwork</text>
+<text x="99" y="301" class="m" fill="#E4E2EE" textLength="27">[ ]</text>
+<text x="153" y="301" class="m" fill="#E4E2EE" textLength="369"> 2h api-gateway    Fix token refresh race</text>
+<text x="99" y="325" class="m" fill="#E4E2EE" textLength="27">[ ]</text>
+<text x="153" y="325" class="m" fill="#E4E2EE" textLength="396"> 5h api-gateway    Add rate limit middleware</text>
+<text x="108" y="325" class="m x2" fill="#E4E2EE" textLength="9">x</text>
+<text x="99" y="349" class="m" fill="#E4E2EE" textLength="27">[ ]</text>
+<text x="153" y="349" class="m" fill="#E4E2EE" textLength="423"> 1d web-dashboard  Dark mode toggle in settings</text>
+<text x="108" y="349" class="m x3" fill="#E4E2EE" textLength="9">x</text>
+<text x="99" y="373" class="m" fill="#E4E2EE" textLength="27">[ ]</text>
+<text x="153" y="373" class="m" fill="#E4E2EE" textLength="414"> 1d infra          ★ Terraform state migration</text>
+<text x="99" y="397" class="m" fill="#E4E2EE" textLength="27">[x]</text>
+<text x="153" y="397" class="m" fill="#E4E2EE" textLength="378"> 2d notes          Summarise meeting notes</text>
+<text x="99" y="421" class="m" fill="#7D56F4" textLength="27">[ ]</text>
+<text x="153" y="421" class="m" fill="#7D56F4" textLength="342"> 3d ios-app        Crash on cold start</text>
+<text x="99" y="445" class="m" fill="#E4E2EE" textLength="27">[ ]</text>
+<text x="153" y="445" class="m" fill="#E4E2EE" textLength="369"> 4d web-dashboard  Chart tooltip overflow</text>
+<text x="99" y="469" class="m" fill="#E4E2EE" textLength="27">[ ]</text>
+<text x="153" y="469" class="m" fill="#E4E2EE" textLength="360"> 6d compiler       Constant folding pass</text>
+<text x="99" y="493" class="m" fill="#E4E2EE" textLength="27">[ ]</text>
+<text x="153" y="493" class="m" fill="#E4E2EE" textLength="333"> 6d dotfiles       Tidy shell aliases</text>
+<line x1="634.5" y1="262" x2="634.5" y2="498" stroke="#2E2B40" stroke-width="2"/>
+<rect x="631.5" y="262" width="6" height="58" rx="3" fill="#5A5670"/>
+<g class="p1">
+<rect x="657" y="240" width="360" height="16" fill="#100E19"/>
+<text x="657" y="253" class="m" fill="#77758C" textLength="360"> 7f3a9c2e · ~/code/api-gateway · 1.2 MB </text>
+<text x="657" y="277" class="m" fill="#EE6FF8" textLength="27" font-weight="700">you</text>
+<text x="702" y="277" class="m" fill="#E4E2EE" textLength="378">Two requests refresh the token at once and</text>
+<text x="657" y="301" class="m" fill="#E4E2EE" textLength="342">one gets a 401. Can you find the race?</text>
+<text x="657" y="349" class="m" fill="#77758C" textLength="54">claude</text>
+<text x="729" y="349" class="m" fill="#E4E2EE" textLength="387">Found it. refresh() reads the token, awaits</text>
+<text x="657" y="373" class="m" fill="#E4E2EE" textLength="405">the network, then writes. A second caller can</text>
+<text x="657" y="397" class="m" fill="#E4E2EE" textLength="423">start in between. I will guard it with a single</text>
+<text x="657" y="421" class="m" fill="#E4E2EE" textLength="162">in-flight promise.</text>
+<text x="657" y="469" class="m" fill="#EE6FF8" textLength="27" font-weight="700">you</text>
+<text x="702" y="469" class="m" fill="#E4E2EE" textLength="198">Do it, and add a test.</text>
+</g>
+<g class="p2">
+<rect x="657" y="240" width="378" height="16" fill="#100E19"/>
+<text x="657" y="253" class="m" fill="#77758C" textLength="378"> b21d04aa · ~/code/api-gateway · 640.2 KB </text>
+<text x="657" y="277" class="m" fill="#EE6FF8" textLength="27" font-weight="700">you</text>
+<text x="702" y="277" class="m" fill="#E4E2EE" textLength="387">Add a rate limit: 100 requests a minute per</text>
+<text x="657" y="301" class="m" fill="#E4E2EE" textLength="207">API key, 429 when over.</text>
+<text x="657" y="349" class="m" fill="#77758C" textLength="54">claude</text>
+<text x="729" y="349" class="m" fill="#E4E2EE" textLength="360">Added a token bucket middleware keyed by</text>
+<text x="657" y="373" class="m" fill="#E4E2EE" textLength="378">API key, with a Retry-After header on 429.</text>
+<text x="657" y="397" class="m" fill="#E4E2EE" textLength="252">Limits are read from config.</text>
+<text x="657" y="445" class="m" fill="#EE6FF8" textLength="27" font-weight="700">you</text>
+<text x="702" y="445" class="m" fill="#E4E2EE" textLength="342">Make the limit configurable per route.</text>
+<text x="657" y="493" class="m" fill="#77758C" textLength="54">claude</text>
+<text x="729" y="493" class="m" fill="#E4E2EE" textLength="360">Done. Routes override it in routes.toml.</text>
+</g>
+<g class="p3">
+<rect x="657" y="240" width="378" height="16" fill="#100E19"/>
+<text x="657" y="253" class="m" fill="#77758C" textLength="378"> 03c9e7f1 · ~/code/web-dashboard · 2.4 MB </text>
+<text x="657" y="277" class="m" fill="#EE6FF8" textLength="27" font-weight="700">you</text>
+<text x="702" y="277" class="m" fill="#E4E2EE" textLength="396">Add a dark mode toggle to the settings page.</text>
+<text x="657" y="325" class="m" fill="#77758C" textLength="54">claude</text>
+<text x="729" y="325" class="m" fill="#E4E2EE" textLength="369">Added the toggle. It stores the choice in</text>
+<text x="657" y="349" class="m" fill="#E4E2EE" textLength="369">localStorage and follows the system theme</text>
+<text x="657" y="373" class="m" fill="#E4E2EE" textLength="225">until the user picks one.</text>
+<text x="657" y="421" class="m" fill="#EE6FF8" textLength="27" font-weight="700">you</text>
+<text x="702" y="421" class="m" fill="#E4E2EE" textLength="378">The chart colours look washed out in dark.</text>
+<text x="657" y="469" class="m" fill="#77758C" textLength="54">claude</text>
+<text x="729" y="469" class="m" fill="#E4E2EE" textLength="351">Switched the charts to theme tokens, so</text>
+<text x="657" y="493" class="m" fill="#E4E2EE" textLength="252">they follow the palette now.</text>
+</g>
+<text x="72" y="541" class="m" fill="#77758C" textLength="594">↑↓ move · ←→ folder · space select · a all · enter open · / filter</text>
+<text x="72" y="565" class="m" fill="#77758C" textLength="675">d trash · c claim owner · y copy resume · t theme · ? all keys · esc quit ·</text>
+<rect x="756" y="548" width="117" height="24" fill="#7D56F4"/>
+<text x="756" y="565" class="m" fill="#FAFAFA" textLength="117"> tab Trash 4 </text>
+</svg>
