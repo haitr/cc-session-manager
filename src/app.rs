@@ -20,7 +20,7 @@ const PREVIEW_MESSAGES: usize = 12;
 enum Attempt {
     /// Lowercased needle.
     Text(String),
-    Regex(regex::Regex),
+    Regex(regex_lite::Regex),
     /// A pattern that does not compile (usually still being typed).
     Never,
 }
@@ -29,7 +29,7 @@ impl Attempt {
     fn parse(text: &str) -> Self {
         match text.strip_prefix("regex:") {
             None => Attempt::Text(text.to_lowercase()),
-            Some(pattern) => regex::RegexBuilder::new(pattern)
+            Some(pattern) => regex_lite::RegexBuilder::new(pattern)
                 .case_insensitive(true)
                 .build()
                 .map_or(Attempt::Never, Attempt::Regex),
@@ -251,9 +251,10 @@ fn toggle_all(selected: &mut HashSet<PathBuf>, shown: Vec<PathBuf>) {
     }
 }
 
-/// Last component of the session's working directory.
+/// Last component of the session's working directory. Splits on either separator on every
+/// platform, so a Windows-recorded cwd also reads right elsewhere.
 pub fn project(s: &Session) -> &str {
-    Path::new(&s.cwd).file_name().and_then(|name| name.to_str()).unwrap_or(&s.cwd)
+    s.cwd.rsplit(['/', '\\']).find(|part| !part.is_empty()).unwrap_or(&s.cwd)
 }
 
 impl Model {

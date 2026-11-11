@@ -10,5 +10,11 @@ mod view;
 mod host;
 
 fn main() -> anyhow::Result<()> {
+    if std::env::args().any(|arg| arg == "--version" || arg == "-V") {
+        // CCSM_BUILD is the CI run number, set only for numbered pre-release builds.
+        let build = option_env!("CCSM_BUILD").filter(|n| !n.is_empty()).map(|n| format!("+{n}")).unwrap_or_default();
+        println!("ccsm {}{build}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
+    }
     host::run(app::Model::new(sessions::claude_home()))
 }

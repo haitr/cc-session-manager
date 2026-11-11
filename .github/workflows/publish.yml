@@ -1,0 +1,33 @@
+name: publish
+
+# Sends an existing GitHub release to package channels, reusing its binaries (no rebuild).
+# Dispatched by release.yml after a proper v<version> release; can also be run by hand for any tag.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish, e.g. v0.1.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GH_REPO: ${{ github.repository }}
+  TAG: ${{ inputs.tag }}
+
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download and verify release assets
+        run: |
+          gh release download "$TAG" --dir dist
+          cd dist
+          sha256sum --check SHA256SUMS
+          { echo "### $TAG"; echo '```'; cat SHA256SUMS; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+  # No channels yet. Each one (crates.io, Homebrew tap, Scoop bucket, ...) becomes a job here
+  # with `needs: assets`, reading the same release assets and SHA256SUMS.

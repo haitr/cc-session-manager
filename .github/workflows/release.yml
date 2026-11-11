@@ -1,0 +1,109 @@
+name: release
+
+# Two ways in:
+#   - push to master that touches Cargo.toml: if its version has no release yet, publish v<version>.
+#   - Run workflow (manual): publish a numbered pre-release v<version>+<run number>.
+on:
+  push:
+    branches: [master]
+    paths: [Cargo.toml]
+  workflow_dispatch:
+
+permissions:
+  contents: write # create the release
+  actions: write # dispatch publish.yml
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GH_REPO: ${{ github.repository }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.plan.outputs.go }}
+      tag: ${{ steps.plan.outputs.tag }}
+      build: ${{ steps.plan.outputs.build }} # run number on numbered builds, empty on a proper release
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            echo "tag=v$version+$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+            echo "build=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          elif gh release view "v$version" > /dev/null 2>&1; then
+            echo "v$version is already released; bump the version in Cargo.toml to release." >> "$GITHUB_STEP_SUMMARY"
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v$version" >> "$GITHUB_OUTPUT"
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.go == 'true'
+    strategy:
+      matrix:
+        include:
+          # musl = fully static: one binary for every Linux distro.
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-musl }
+          - { os: macos-latest, target: aarch64-apple-darwin }
+          - { os: macos-latest, target: x86_64-apple-darwin }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      CCSM_BUILD: ${{ needs.plan.outputs.build }} # compiled into `ccsm --version`
+      NAME: ccsm-${{ needs.plan.outputs.tag }}-${{ matrix.target }}
+      EXE: ${{ runner.os == 'Windows' && '.exe' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - run: cargo test
+      - run: cargo build --release --target ${{ matrix.target }}
+        env:
+          # Static C runtime on Windows, so the exe needs no VC++ redistributable.
+          RUSTFLAGS: ${{ runner.os == 'Windows' && '-C target-feature=+crt-static' || '' }}
+      - name: Package
+        run: |
+          mkdir -p dist "$NAME"
+          cp README.md "target/${{ matrix.target }}/release/ccsm$EXE" "$NAME/"
+          if [ "$RUNNER_OS" = Windows ]; then
+            7z a "dist/$NAME.zip" "$NAME" > /dev/null
+          else
+            tar czf "dist/$NAME.tar.gz" "$NAME"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ needs.plan.outputs.tag }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create release
+        run: |
+          (cd dist && sha256sum ccsm-* > SHA256SUMS)
+          gh release create "$TAG" dist/* --title "$TAG" --generate-notes --target "$GITHUB_SHA" \
+            ${{ needs.plan.outputs.build != '' && '--prerelease' || '' }}
+      # A release made with the built-in token does not fire `on: release`, so hand over explicitly.
+      # Numbered pre-release builds are not published anywhere else.
+      - name: Hand over to publish.yml
+        if: needs.plan.outputs.build == ''
+        run: gh workflow run publish.yml --ref "$GITHUB_REF_NAME" -f tag="$TAG"

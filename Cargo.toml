@@ -13,7 +13,7 @@ standalone = ["dep:eframe", "dep:egui_ratatui", "dep:soft_ratatui"]
 anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-regex = "1"
+regex-lite = "0.1"
 # unstable-rendered-line-info: Paragraph::line_count, to pin the preview to its last lines
 ratatui = { version = "0.30", features = ["unstable-rendered-line-info"] }
 ratatui-cheese = "0.7"
@@ -23,3 +23,11 @@ ratatui-braille-bar = "0.3"
 eframe = { version = "0.34", optional = true }
 egui_ratatui = { version = "2", optional = true }
 soft_ratatui = { version = "0.2", features = ["embedded-ttf"], default-features = false, optional = true }
+
+# Smallest binary: the app is disk-bound, so size wins over speed.
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort" # the panic hook still restores the terminal before the abort
+strip = true
