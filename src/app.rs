@@ -203,6 +203,8 @@ pub struct Model {
     rx:                Option<Receiver<ScanEvent>>,
     pub status:        String,
     pub palette:       Palette,
+    /// Index of `palette` in `Palette::presets()`; `t` cycles it.
+    theme:             usize,
     pub spinner:       Spinner,
     pub spinner_state: SpinnerState,
     pub should_quit:   bool,
@@ -257,6 +259,7 @@ pub fn project(s: &Session) -> &str {
 impl Model {
     pub fn new(root: PathBuf) -> Self {
         let palette = Palette::charm();
+        let theme = Palette::presets().iter().position(|(name, _)| name.eq_ignore_ascii_case("charm")).unwrap_or(0);
         Self {
             rx: Some(sessions::scan(root.clone())),
             live: sessions::live_ids(&root),
@@ -287,6 +290,7 @@ impl Model {
             spinner: Spinner::default().style(Style::default().fg(palette.primary)),
             spinner_state: SpinnerState::new(SpinnerType::Dot),
             palette,
+            theme,
             should_quit: false,
         }
     }
@@ -422,6 +426,15 @@ impl Model {
             KeyCode::Char('d') => self.ask_trash(),
             KeyCode::Char('c') => self.ask_claim(),
             KeyCode::Char('y') => self.copy_resume(),
+            // ponytail: theme lasts for this run only; persist the name if that gets annoying.
+            KeyCode::Char('t') => {
+                let mut presets = Palette::presets();
+                self.theme = (self.theme + 1) % presets.len();
+                let (name, palette) = presets.swap_remove(self.theme);
+                self.spinner = Spinner::default().style(Style::default().fg(palette.primary));
+                self.palette = palette;
+                self.status = format!("theme: {name}");
+            }
             KeyCode::Tab => {
                 self.reload_trash();
                 self.stage = Stage::Trash;
@@ -904,16 +917,31 @@ mod tests {
         let guide = screen_sized(&mut m, 60, 12);
         assert!(guide.contains("toggle selection") && !guide.contains("regex:<pattern>"), "{guide}");
         m.handle(KeyCode::Down);
+        m.handle(KeyCode::Down);
         m.handle(KeyCode::PageDown);
         let guide = screen_sized(&mut m, 60, 12);
-        assert!(m.help && m.help_scroll == 11 && guide.contains("regex:<pattern>"), "{guide}");
+        assert!(m.help && m.help_scroll == 12 && guide.contains("regex:<pattern>"), "{guide}");
         m.handle(KeyCode::PageDown);
         m.handle(KeyCode::PageDown);
         m.handle(KeyCode::PageDown);
         screen_sized(&mut m, 60, 12);
-        assert!(m.help_scroll < 30); // clamped to the content
+        let bottom = m.help_scroll;
+        m.handle(KeyCode::PageDown);
+        screen_sized(&mut m, 60, 12);
+        assert_eq!(m.help_scroll, bottom); // clamped to the content
         m.handle(KeyCode::Char('d'));
         assert!(!m.help && matches!(m.stage, Stage::Browse));
+
+        // `t` walks every built-in theme and comes back to the first; each one draws.
+        let start = m.palette.primary;
+        let themes = Palette::presets().len();
+        let mut seen = std::collections::HashSet::new();
+        for _ in 0..themes {
+            m.handle(KeyCode::Char('t'));
+            assert!(m.status.starts_with("theme: ") && seen.insert(m.status.clone()), "{}", m.status);
+            screen(&mut m);
+        }
+        assert!(themes > 1 && m.palette.primary == start);
 
         // While typing a filter, `?` is text and the arrows still switch folder.
         m.handle(KeyCode::Char('/'));

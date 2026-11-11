@@ -20,6 +20,7 @@ cargo test
 | `c` | change owner of selection (or cursor row) to the signed-in account, with confirm |
 | `y` | copy `cd <cwd> && claude --resume <id>` |
 | `tab` | trash view: `space` / `a` select, `r` restore, `x` delete forever (selection, or cursor row) |
+| `t` | next colour theme (dark, light, charm, ocean, sunset; not remembered) |
 | `?` | key guide |
 | `esc` `q` | back / quit |
 
@@ -48,6 +49,6 @@ Folder tabs list only folders the filter leaves something in.
 - Trash is a move into `~/.claude/.session-cleaner-trash`; nothing is deleted until `x` in the trash view.
 - Sessions owned by a running Claude Code process, or written in the last 10 minutes, are marked `●` and cannot be
   trashed or re-owned.
-- Sessions owned by another account (their `session-owner` records vs `oauthAccount` in `.claude.json`) are magenta.
+- Sessions owned by another account (their `session-owner` records vs `oauthAccount` in `.claude.json`) use the theme's second accent colour.
 - Session metadata is cached in `~/.claude/ccsm-cache.json` (validated by file size + mtime), so only new or changed
   transcripts are re-read on launch. Safe to delete.

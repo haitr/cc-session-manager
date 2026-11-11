@@ -4,7 +4,7 @@ use std::path::Path;
 
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout, Margin, Rect};
-use ratatui::style::{Color, Modifier, Style};
+use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{
     Block, Clear, List, ListItem, ListState, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget,
@@ -16,9 +16,6 @@ use ratatui_cheese::theme::Palette;
 
 use crate::app::{Model, Pending, Stage, project};
 use crate::sessions::{age, human_size};
-
-/// Sessions owned by another account.
-const FOREIGN: Color = Color::Magenta;
 
 fn title(p: &Palette) -> Style {
     Style::default().fg(p.primary).add_modifier(Modifier::BOLD)
@@ -90,7 +87,7 @@ pub fn view(frame: &mut Frame, m: &mut Model) {
     if actions {
         let badge = Style::default().fg(m.palette.on_highlight).bg(m.palette.highlight);
         let line = Line::from(vec![
-            Span::styled("d trash · c claim owner · y copy resume · ? all keys · esc quit · ", dim(&m.palette)),
+            Span::styled("d trash · c claim owner · y copy resume · t theme · ? all keys · esc quit · ", dim(&m.palette)),
             Span::styled(format!(" tab Trash {} ", m.trash.len()), badge),
         ]);
         Widget::render(line, actions_area, frame.buffer_mut());
@@ -116,6 +113,7 @@ const KEYS: &[(&str, &str)] = &[
     ("y", "copy resume command"),
     ("tab", "trash view"),
     ("esc  q", "clear filter / quit"),
+    ("t", "next colour theme"),
     ("?", "this guide"),
     ("", ""),
     ("", "FILTER  (comma-separated terms)"),
@@ -171,7 +169,7 @@ fn stats_row(frame: &mut Frame, m: &Model, area: Rect) {
     let summary = format!("ccsm  {} sessions · {projects} projects · {}", m.sessions.len(), human_size(total));
     let mut spans = vec![Span::styled(summary, title(&m.palette))];
     if foreign > 0 {
-        spans.push(Span::styled(format!("  · {foreign} foreign"), Style::default().fg(FOREIGN)));
+        spans.push(Span::styled(format!("  · {foreign} foreign"), Style::default().fg(m.palette.secondary)));
     }
     Widget::render(Line::from(spans), area, frame.buffer_mut());
 }
@@ -210,9 +208,9 @@ fn info_row(frame: &mut Frame, m: &Model, area: Rect) {
         spans.push(Span::styled(format!("/{}  ", m.filter), dim(&m.palette)));
     }
     if let Some(pattern) = &m.filter_error {
-        spans.push(Span::styled(format!("bad filter: {pattern}  "), Style::default().fg(Color::Red)));
+        spans.push(Span::styled(format!("bad filter: {pattern}  "), Style::default().fg(m.palette.error)));
     }
-    spans.push(Span::styled(m.status.as_str(), Style::default().fg(Color::Yellow)));
+    spans.push(Span::styled(m.status.as_str(), Style::default().fg(m.palette.secondary)));
     Widget::render(Line::from(spans), area, frame.buffer_mut());
 }
 
@@ -277,7 +275,8 @@ fn browse(frame: &mut Frame, m: &mut Model, area: Rect) {
             let dot = if s.active(&m.live) { "●" } else { " " };
             let star = if s.starred { "★ " } else { "" };
             let row = format!("{mark} {dot} {:>3} {:<14.14} {star}{}", age(s.mtime), project(s), s.label);
-            let style = if m.foreign(s) { Style::default().fg(FOREIGN) } else { Style::default() };
+            // Sessions owned by another account take the theme's second accent.
+            let style = if m.foreign(s) { Style::default().fg(m.palette.secondary) } else { Style::default() };
             ListItem::new(row).style(style)
         })
         .collect();
