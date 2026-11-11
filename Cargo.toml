@@ -1,0 +1,25 @@
+[package]
+name = "ccsm"
+version = "0.1.0"
+edition = "2024"
+description = "Claude Code session manager TUI"
+
+[features]
+default = []
+# Render in a self-contained egui window (embedded FiraCode) instead of the terminal.
+standalone = ["dep:eframe", "dep:egui_ratatui", "dep:soft_ratatui"]
+
+[dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+# unstable-rendered-line-info: Paragraph::line_count, to pin the preview to its last lines
+ratatui = { version = "0.30", features = ["unstable-rendered-line-info"] }
+ratatui-cheese = "0.7"
+ratatui-braille-bar = "0.3"
+
+# standalone-only egui host (egui itself comes via eframe::egui)
+eframe = { version = "0.34", optional = true }
+egui_ratatui = { version = "2", optional = true }
+soft_ratatui = { version = "0.2", features = ["embedded-ttf"], default-features = false, optional = true }
