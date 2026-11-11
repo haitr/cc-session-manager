@@ -1,13 +1,15 @@
 name: release
 
-# Two ways in:
-#   - push to master that touches Cargo.toml: if its version has no release yet, publish v<version>.
-#   - Run workflow (manual): publish a numbered pre-release v<version>+<run number>.
+# Manual only (Actions -> release -> Run workflow):
+#   - default: if the Cargo.toml version has no release yet, publish v<version>.
+#   - pre-release ticked: publish a numbered pre-release v<version>+<run number>.
 on:
-  push:
-    branches: [master]
-    paths: [Cargo.toml]
   workflow_dispatch:
+    inputs:
+      prerelease:
+        description: Numbered pre-release (v<version>+<run number>) instead of a proper release
+        type: boolean
+        default: false
 
 permissions:
   contents: write # create the release
@@ -27,9 +29,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: plan
+        env:
+          PRERELEASE: ${{ inputs.prerelease }}
         run: |
           version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
-          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+          if [ "$PRERELEASE" = true ]; then
             echo "tag=v$version+$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
             echo "build=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
             echo "go=true" >> "$GITHUB_OUTPUT"
@@ -59,7 +63,7 @@ jobs:
     env:
       CCSM_BUILD: ${{ needs.plan.outputs.build }} # compiled into `ccsm --version`
       NAME: ccsm-${{ needs.plan.outputs.tag }}-${{ matrix.target }}
-      EXE: ${{ runner.os == 'Windows' && '.exe' || '' }}
+      EXE: ${{ matrix.os == 'windows-latest' && '.exe' || '' }} # `runner` is not available in job-level env
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -75,7 +79,7 @@ jobs:
       - name: Package
         run: |
           mkdir -p dist "$NAME"
-          cp README.md "target/${{ matrix.target }}/release/ccsm$EXE" "$NAME/"
+          cp README.md LICENSE "target/${{ matrix.target }}/release/ccsm$EXE" "$NAME/"
           if [ "$RUNNER_OS" = Windows ]; then
             7z a "dist/$NAME.zip" "$NAME" > /dev/null
           else

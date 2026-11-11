@@ -3,6 +3,7 @@ name = "ccsm"
 version = "0.1.0"
 edition = "2024"
 description = "Claude Code session manager TUI"
+license = "MIT"
 
 [features]
 default = []
