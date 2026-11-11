@@ -53,8 +53,8 @@ pub fn view(frame: &mut Frame, m: &mut Model) {
             format!("Change owner of {} session(s) to the signed-in account?", targets.len()),
             ["Cancel", "Change owner"],
         )),
-        Stage::Confirm(Pending::Purge(_)) => Some((
-            "Delete this trashed session permanently? This cannot be undone.".to_string(),
+        Stage::Confirm(Pending::Purge(dirs)) => Some((
+            format!("Delete {} trashed session(s) permanently? This cannot be undone.", dirs.len()),
             ["Cancel", "Delete forever"],
         )),
         _ => None,
@@ -64,7 +64,7 @@ pub fn view(frame: &mut Frame, m: &mut Model) {
         (_, Stage::Loading) => "esc quit",
         (_, Stage::Filter) => "type to filter · ↑↓ move · ←→ folder · enter keep · esc clear · ? in browse for syntax",
         (_, Stage::Detail) => "↑↓ scroll · pgup/pgdn page · home/end · y copy resume · esc close",
-        (_, Stage::Trash) => "↑↓ move · r restore · x delete forever · tab/esc back",
+        (_, Stage::Trash) => "↑↓ move · space select · a all · r restore · x delete forever · tab/esc back",
         _ => "↑↓ move · ←→ folder · space select · a all · enter open · / filter",
     };
     // Browse gets a second line of actions, ending in the trash key and how much is in there.
@@ -105,6 +105,7 @@ const KEYS: &[(&str, &str)] = &[
     ("", "BROWSE"),
     ("↑ ↓  j k", "move"),
     ("PgUp PgDn", "move 10 rows"),
+    ("Home  End", "first / last row"),
     ("← →", "previous / next folder"),
     ("space", "toggle selection"),
     ("a", "select / unselect all shown"),
@@ -134,8 +135,9 @@ const KEYS: &[(&str, &str)] = &[
     ("esc", "close"),
     ("", ""),
     ("", "TRASH"),
-    ("r", "restore"),
-    ("x", "delete forever"),
+    ("space  a", "toggle selection / all"),
+    ("r", "restore selection"),
+    ("x", "delete selection forever"),
     ("tab  esc", "back"),
 ];
 
@@ -337,10 +339,11 @@ fn trash(frame: &mut Frame, m: &mut Model, area: Rect) {
         .map(|t| {
             let project = t.original.parent().and_then(Path::file_name).unwrap_or_default().to_string_lossy();
             let uuid = t.original.file_stem().unwrap_or_default().to_string_lossy();
-            ListItem::new(format!("{:>4}  {:>9}  {uuid}  {project}", age(t.trashed), human_size(t.size)))
+            let mark = if m.trash_selected.contains(&t.dir) { "[x]" } else { "[ ]" };
+            ListItem::new(format!("{mark} {:>4}  {:>9}  {uuid}  {project}", age(t.trashed), human_size(t.size)))
         })
         .collect();
-    let heading = format!(" trash · {} item(s) ", m.trash.len());
+    let heading = format!(" trash · {} item(s) · {} selected ", m.trash.len(), m.trash_selected.len());
     list(frame, area, heading, items, &mut m.trash_list, &m.palette);
 }
 

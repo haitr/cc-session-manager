@@ -11,7 +11,7 @@ cargo test
 
 | key | action |
 | --- | --- |
-| `↑↓` `j k` `PgUp PgDn` | move |
+| `↑↓` `j k` `PgUp PgDn` `Home End` | move |
 | `←` `→` | switch folder tab (`[all]` first); also while typing a filter |
 | `space` / `a` | select row / all shown |
 | `enter` | open full transcript over the list (`↑↓` `PgUp PgDn` `Home End` scroll, `esc` close) |
@@ -19,7 +19,7 @@ cargo test
 | `d` | move selection (or cursor row) to trash, with confirm |
 | `c` | change owner of selection (or cursor row) to the signed-in account, with confirm |
 | `y` | copy `cd <cwd> && claude --resume <id>` |
-| `tab` | trash view: `r` restore, `x` delete forever |
+| `tab` | trash view: `space` / `a` select, `r` restore, `x` delete forever (selection, or cursor row) |
 | `?` | key guide |
 | `esc` `q` | back / quit |
 

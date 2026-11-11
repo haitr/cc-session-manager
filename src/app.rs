@@ -151,8 +151,8 @@ pub enum Pending {
     Trash(Vec<PathBuf>),
     /// Session paths whose owner becomes the signed-in account.
     Claim(Vec<PathBuf>),
-    /// Index into `Model::trash` to delete for good.
-    Purge(usize),
+    /// Trash item dirs to delete for good.
+    Purge(Vec<PathBuf>),
 }
 
 pub enum Stage {
@@ -188,6 +188,8 @@ pub struct Model {
     pub list:          ListState,
     pub trash:         Vec<TrashItem>,
     pub trash_list:    ListState,
+    /// Selected trash items, by their dir.
+    pub trash_selected: HashSet<PathBuf>,
     pub choice:        SelectState,
     pub preview:       Vec<(bool, String)>,
     preview_for:       Option<PathBuf>,
@@ -214,7 +216,37 @@ fn choice(options: usize) -> SelectState {
 
 fn step(list: &mut ListState, len: usize, delta: isize) {
     let cur = list.selected().unwrap_or(0) as isize;
-    list.select((len > 0).then(|| (cur + delta).clamp(0, len as isize - 1) as usize));
+    list.select((len > 0).then(|| cur.saturating_add(delta).clamp(0, len as isize - 1) as usize));
+}
+
+/// Apply a list-movement key to `list`; false when `code` is not one.
+fn list_key(code: KeyCode, list: &mut ListState, len: usize) -> bool {
+    let delta = match code {
+        KeyCode::Up | KeyCode::Char('k') => -1,
+        KeyCode::Down | KeyCode::Char('j') => 1,
+        KeyCode::PageUp => -10,
+        KeyCode::PageDown => 10,
+        KeyCode::Home => isize::MIN,
+        KeyCode::End => isize::MAX,
+        _ => return false,
+    };
+    step(list, len, delta);
+    true
+}
+
+fn toggle(selected: &mut HashSet<PathBuf>, path: PathBuf) {
+    if !selected.remove(&path) {
+        selected.insert(path);
+    }
+}
+
+/// Select everything in `shown`, or unselect it all when it already is.
+fn toggle_all(selected: &mut HashSet<PathBuf>, shown: Vec<PathBuf>) {
+    if shown.iter().all(|path| selected.contains(path)) {
+        selected.retain(|path| !shown.contains(path));
+    } else {
+        selected.extend(shown);
+    }
 }
 
 /// Last component of the session's working directory.
@@ -243,6 +275,7 @@ impl Model {
             help_scroll: 0,
             list: ListState::default(),
             trash_list: ListState::default(),
+            trash_selected: HashSet::new(),
             choice: choice(2),
             preview: Vec::new(),
             preview_for: None,
@@ -302,6 +335,7 @@ impl Model {
 
     fn reload_trash(&mut self) {
         self.trash = sessions::list_trash(&self.root);
+        self.trash_selected.retain(|dir| self.trash.iter().any(|item| item.dir == *dir));
         step(&mut self.trash_list, self.trash.len(), 0);
     }
 
@@ -362,30 +396,20 @@ impl Model {
     }
 
     fn browse(&mut self, code: KeyCode) {
-        let len = self.visible.len();
+        if list_key(code, &mut self.list, self.visible.len()) {
+            return;
+        }
         match code {
-            KeyCode::Up | KeyCode::Char('k') => step(&mut self.list, len, -1),
-            KeyCode::Down | KeyCode::Char('j') => step(&mut self.list, len, 1),
-            KeyCode::PageUp => step(&mut self.list, len, -10),
-            KeyCode::PageDown => step(&mut self.list, len, 10),
             KeyCode::Left => self.switch_group(-1),
             KeyCode::Right => self.switch_group(1),
             KeyCode::Char(' ') => {
-                if let Some(path) = self.cursor().map(|s| s.path.clone())
-                    && !self.selected.remove(&path)
-                {
-                    self.selected.insert(path);
+                if let Some(path) = self.cursor().map(|s| s.path.clone()) {
+                    toggle(&mut self.selected, path);
                 }
             }
             KeyCode::Char('a') => {
-                let shown: Vec<PathBuf> = self.visible.iter().map(|&i| self.sessions[i].path.clone()).collect();
-                if shown.iter().all(|p| self.selected.contains(p)) {
-                    for path in &shown {
-                        self.selected.remove(path);
-                    }
-                } else {
-                    self.selected.extend(shown);
-                }
+                let shown = self.visible.iter().map(|&i| self.sessions[i].path.clone()).collect();
+                toggle_all(&mut self.selected, shown);
             }
             KeyCode::Enter => {
                 if let Some(path) = self.cursor().map(|s| s.path.clone()) {
@@ -492,35 +516,61 @@ impl Model {
     }
 
     fn trash_view(&mut self, code: KeyCode) {
-        let len = self.trash.len();
+        if list_key(code, &mut self.trash_list, self.trash.len()) {
+            return;
+        }
+        let dirs = || self.trash.iter().map(|item| item.dir.clone());
+        let cursor = self.trash_list.selected().and_then(|i| dirs().nth(i));
+        // What r / x act on: the selection, or the cursor row when nothing is selected.
+        let targets: Vec<PathBuf> = if self.trash_selected.is_empty() {
+            cursor.iter().cloned().collect()
+        } else {
+            dirs().filter(|dir| self.trash_selected.contains(dir)).collect()
+        };
         match code {
-            KeyCode::Up | KeyCode::Char('k') => step(&mut self.trash_list, len, -1),
-            KeyCode::Down | KeyCode::Char('j') => step(&mut self.trash_list, len, 1),
-            KeyCode::Char('r') => {
-                let Some(item) = self.trash_list.selected().and_then(|i| self.trash.get(i)) else { return };
-                match sessions::restore(item) {
-                    Ok(()) => {
-                        self.status = format!("restored {}", item.original.display());
-                        if let Ok(session) = sessions::parse(&item.original) {
-                            self.sessions.push(session);
-                            self.sort();
-                        }
-                        self.refilter();
-                    }
-                    Err(e) => self.status = format!("restore failed: {e:#}"),
-                }
-                self.reload_trash();
+            KeyCode::Char(' ') => cursor.into_iter().for_each(|dir| toggle(&mut self.trash_selected, dir)),
+            KeyCode::Char('a') => {
+                let all = dirs().collect();
+                toggle_all(&mut self.trash_selected, all);
             }
-            KeyCode::Char('x') => {
-                if let Some(i) = self.trash_list.selected().filter(|&i| i < len) {
-                    self.choice = choice(2);
-                    self.stage = Stage::Confirm(Pending::Purge(i));
-                }
+            KeyCode::Char('r') => self.empty_trash(targets, true),
+            KeyCode::Char('x') if !targets.is_empty() => {
+                self.choice = choice(2);
+                self.stage = Stage::Confirm(Pending::Purge(targets));
             }
             KeyCode::Tab | KeyCode::Esc => self.stage = Stage::Browse,
             KeyCode::Char('q') => self.should_quit = true,
             _ => {}
         }
+    }
+
+    /// Restore (or, with `restore` false, permanently delete) the trash items in `dirs`.
+    fn empty_trash(&mut self, dirs: Vec<PathBuf>, restore: bool) {
+        let (mut done, mut failed, mut first) = (0, 0, None);
+        for dir in dirs {
+            let Some(item) = self.trash.iter().find(|item| item.dir == dir) else { continue };
+            let result = if restore { sessions::restore(item) } else { sessions::purge(item).map_err(Into::into) };
+            match result {
+                Ok(()) => {
+                    done += 1;
+                    if restore && let Ok(session) = sessions::parse(&item.original) {
+                        self.sessions.push(session);
+                    }
+                }
+                Err(e) => {
+                    failed += 1;
+                    first.get_or_insert(format!("{e:#}"));
+                }
+            }
+        }
+        let verb = if restore { "restored" } else { "purged" };
+        self.status = match first {
+            None => format!("{verb} {done}"),
+            Some(e) => format!("{verb} {done}, {failed} failed: {e}"),
+        };
+        self.sort();
+        self.reload_trash();
+        self.refilter();
     }
 
     fn confirm(&mut self, code: KeyCode) {
@@ -541,13 +591,9 @@ impl Model {
         match std::mem::replace(&mut self.stage, Stage::Browse) {
             Stage::Confirm(Pending::Trash(targets)) if yes => self.trash_sessions(targets),
             Stage::Confirm(Pending::Claim(targets)) if yes => self.claim_sessions(targets),
-            Stage::Confirm(Pending::Purge(i)) => {
-                if yes && let Some(item) = self.trash.get(i) {
-                    self.status = match sessions::purge(item) {
-                        Ok(()) => "purged".into(),
-                        Err(e) => format!("purge failed: {e}"),
-                    };
-                    self.reload_trash();
+            Stage::Confirm(Pending::Purge(dirs)) => {
+                if yes {
+                    self.empty_trash(dirs, false);
                 }
                 self.stage = Stage::Trash;
             }
@@ -710,6 +756,64 @@ mod tests {
         m.handle(KeyCode::Char('r'));
         assert!(path.exists() && m.trash.is_empty());
         assert_eq!(m.sessions.len(), 1);
+    }
+
+    #[test]
+    fn trash_multi_select_and_jumps() {
+        let (root, path, second) = two_folders("multi");
+        let mut m = loaded(root);
+        let trash_both = |m: &mut Model| {
+            for key in [KeyCode::Char('a'), KeyCode::Char('d'), KeyCode::Char('y'), KeyCode::Tab] {
+                m.handle(key);
+            }
+        };
+
+        // Home / End jump in the session list, and are harmless on an empty one.
+        m.handle(KeyCode::End);
+        assert_eq!(m.list.selected(), Some(1));
+        m.handle(KeyCode::Home);
+        assert_eq!(m.list.selected(), Some(0));
+        trash_both(&mut m);
+        assert!(!path.exists() && !second.exists() && matches!(m.stage, Stage::Trash));
+        assert_eq!((m.list.selected(), m.trash.len()), (None, 2));
+
+        // Same keys in the trash list.
+        m.handle(KeyCode::End);
+        assert_eq!(m.trash_list.selected(), Some(1));
+        m.handle(KeyCode::Home);
+        // Space toggles the cursor row, whatever is already selected.
+        m.handle(KeyCode::Char(' '));
+        m.handle(KeyCode::Down);
+        m.handle(KeyCode::Char(' '));
+        assert_eq!(m.trash_selected.len(), 2);
+        m.handle(KeyCode::Char(' '));
+        let first_row = m.trash[0].dir.clone();
+        assert_eq!(m.trash_selected.iter().collect::<Vec<_>>(), vec![&first_row]);
+        m.handle(KeyCode::Char(' '));
+        m.handle(KeyCode::Home);
+        // A declined purge of the whole selection keeps everything.
+        assert!(screen(&mut m).contains("2 selected"));
+        m.handle(KeyCode::Char('x'));
+        assert!(screen(&mut m).contains("Delete 2 trashed session(s) permanently?"));
+        m.handle(KeyCode::Esc);
+        assert_eq!((m.trash.len(), m.trash_selected.len()), (2, 2));
+        // Restore the whole selection.
+        m.handle(KeyCode::Char('r'));
+        assert!(path.exists() && second.exists() && m.trash.is_empty() && m.trash_selected.is_empty());
+        assert_eq!((m.sessions.len(), m.status.as_str()), (2, "restored 2"));
+
+        // Trash both again, then purge only the one selected row.
+        m.handle(KeyCode::Tab);
+        trash_both(&mut m);
+        m.handle(KeyCode::Char(' '));
+        assert_eq!(m.trash_selected.len(), 1);
+        m.handle(KeyCode::Char('x'));
+        m.handle(KeyCode::Char('y'));
+        assert_eq!((m.trash.len(), m.status.as_str()), (1, "purged 1"));
+        assert!(matches!(m.stage, Stage::Trash) && m.trash_selected.is_empty());
+        // With nothing selected, the cursor row is the target.
+        m.handle(KeyCode::Char('r'));
+        assert!(m.trash.is_empty() && m.sessions.len() == 1);
     }
 
     #[test]
