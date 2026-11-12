@@ -27,7 +27,7 @@ jobs:
       tag: ${{ steps.plan.outputs.tag }}
       build: ${{ steps.plan.outputs.build }} # run number on numbered builds, empty on a proper release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: plan
         env:
           PRERELEASE: ${{ inputs.prerelease }}
@@ -65,7 +65,7 @@ jobs:
       NAME: ccsm-${{ needs.plan.outputs.tag }}-${{ matrix.target }}
       EXE: ${{ matrix.os == 'windows-latest' && '.exe' || '' }} # `runner` is not available in job-level env
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -85,7 +85,7 @@ jobs:
           else
             tar czf "dist/$NAME.tar.gz" "$NAME"
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.target }}
           path: dist/*
@@ -97,7 +97,7 @@ jobs:
     env:
       TAG: ${{ needs.plan.outputs.tag }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
